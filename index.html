@@ -1000,11 +1000,11 @@ function renderSideMenu() {
           <button onclick="closeSideMenu();goNew()" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 20px;border:none;background:none;cursor:pointer;font-size:13px;color:#334155;font-family:inherit">
             ➕ <span>قضية جديدة</span>
           </button>
-          ${currentUser?.app_metadata?.role === 'admin' ? `
+          ${isAdmin() ? `
           <button onclick="closeSideMenu();openSettings()" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 20px;border:none;background:none;cursor:pointer;font-size:13px;color:#334155;font-family:inherit">
             ⚙️ <span>الإعدادات</span>
           </button>` : ''}
-          ${currentUser?.app_metadata?.role === 'admin' ? `
+          ${isAdmin() ? `
           <button onclick="closeSideMenu();openUserMgmt()" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 20px;border:none;background:none;cursor:pointer;font-size:13px;color:#334155;font-family:inherit">
             👥 <span>إدارة المستخدمين</span>
           </button>` : ''}
@@ -1015,6 +1015,11 @@ function renderSideMenu() {
         </div>
       </div>
     </div>`;
+}
+
+function isAdmin() {
+  return currentUser?.app_metadata?.role === 'admin' ||
+         currentUser?.user_metadata?.role === 'admin';
 }
 
 function openSideMenu() { document.getElementById('side_overlay').style.display='block'; }
@@ -1046,6 +1051,7 @@ async function checkAuth() {
   const user = await getUser();
   if (!user) { showLogin(); return; }
   currentUser = user;
+  console.log('User:', JSON.stringify(user));
   initApp();
 }
 
@@ -1083,7 +1089,7 @@ async function renderUserMgmt() {
         usersHTML = users.map(u => {
           const role = u.app_metadata?.role || 'user';
           const isMe = u.email === currentUser?.email;
-          const iAmAdmin = currentUser?.app_metadata?.role === 'admin';
+          const iAmAdmin = isAdmin();
           const roleBadge = role === 'admin'
             ? '<span class="badge badge-blue">مسؤول</span>'
             : '<span class="badge badge-yellow">مستخدم</span>';
