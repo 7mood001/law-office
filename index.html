@@ -201,70 +201,10 @@ const createCase=d=>sbFetch('cases',{method:'POST',body:JSON.stringify(d)});
 const updateCase=(id,d)=>sbFetch('cases?id=eq.'+id,{method:'PATCH',body:JSON.stringify(d)});
 const deleteCase=id=>sbFetch('cases?id=eq.'+id,{method:'DELETE'});
 
-const CASE_TYPES_DEFAULT={"جنائية":["سرقة","اعتداء","احتيال","قتل خطأ","أخرى"],"مدنية":["مطالبة مالية","عقود","ضرر","أخرى"],"تجارية":["شركات","إفلاس","منافسة غير مشروعة","أخرى"],"أحوال شخصية":["طلاق","حضانة","نفقة","ميراث","أخرى"],"عمالية":["فصل تعسفي","مستحقات عمالية","إصابة عمل","أخرى"],"إدارية":["طعن إداري","قرار تأديبي","أخرى"]};
+const CASE_TYPES={"جنائية":["سرقة","اعتداء","احتيال","قتل خطأ","أخرى"],"مدنية":["مطالبة مالية","عقود","ضرر","أخرى"],"تجارية":["شركات","إفلاس","منافسة غير مشروعة","أخرى"],"أحوال شخصية":["طلاق","حضانة","نفقة","ميراث","أخرى"],"عمالية":["فصل تعسفي","مستحقات عمالية","إصابة عمل","أخرى"],"إدارية":["طعن إداري","قرار تأديبي","أخرى"]};
 const SBM={"جديدة":"badge-blue","قيد النظر":"badge-yellow","منتهية":"badge-green","موقوفة":"badge-red"};
 
-
-// ===== SETTINGS SYSTEM =====
-const DEFAULT_SETTINGS = {
-  office: {
-    name: 'مكتب المحامي عبد المحسن الحارثي',
-    lawyerName: 'عبد المحسن بن سعد الحارثي',
-    license: '13/29',
-    licenseDate: '٢١/٠٤/١٤٢٩هـ',
-    lawyerId: '1010119152',
-    address: 'جدة - حي الشاطئ - شارع طاهر زمخشري',
-    phone: '0566669936',
-    email: 'amr-law@hotmail.com',
-    city: 'جدة'
-  },
-  clientFields: [
-    {id:'case_number', label:'رقم القضية', required:false, type:'text', placeholder:'مثال: 1234/2026', active:true},
-    {id:'client_name', label:'الاسم الكامل', required:true, type:'text', placeholder:'', active:true},
-    {id:'client_id', label:'رقم الهوية / الجواز', required:true, type:'text', placeholder:'', active:true},
-    {id:'client_phone', label:'رقم الجوال', required:true, type:'text', placeholder:'05xxxxxxxx', active:true},
-    {id:'client_address', label:'العنوان', required:false, type:'text', placeholder:'المدينة - الحي', active:true},
-    {id:'opponent_name', label:'اسم الخصم', required:false, type:'text', placeholder:'', active:true}
-  ],
-  caseTypes: {"جنائية":["سرقة","اعتداء","احتيال","قتل خطأ","أخرى"],"مدنية":["مطالبة مالية","عقود","ضرر","أخرى"],"تجارية":["شركات","إفلاس","منافسة غير مشروعة","أخرى"],"أحوال شخصية":["طلاق","حضانة","نفقة","ميراث","أخرى"],"عمالية":["فصل تعسفي","مستحقات عمالية","إصابة عمل","أخرى"],"إدارية":["طعن إداري","قرار تأديبي","أخرى"]},
-  contract: {
-    defaultIntro: 'بقيد الدعاوى القضائية واتخاذ الإجراءات النظامية والمرافعة والتمثيل وتقديم المستندات واللوائح والمذكرات اللازمة للسير في القضية وذلك حتى صدور حكم قضائي مكتسب القطعية؛ فقد اتفق الطرفان وهما بكامل الأهلية المعتبرة شرعاً ونظاماً على الآتي: -',
-    defaultVat: '',
-    defaultPaymentMethod: 'كاش'
-  }
-};
-
-function mergeSettings(parsed) {
-  return {
-    office: {...DEFAULT_SETTINGS.office, ...(parsed.office||{})},
-    clientFields: parsed.clientFields || DEFAULT_SETTINGS.clientFields,
-    caseTypes: parsed.caseTypes || DEFAULT_SETTINGS.caseTypes,
-    contract: {...DEFAULT_SETTINGS.contract, ...(parsed.contract||{})}
-  };
-}
-
-async function loadSettingsFromDB() {
-  try {
-    const res = await sbFetch('settings?key=eq.app_settings');
-    if (res && res.length > 0) {
-      S = mergeSettings(res[0].value);
-    }
-  } catch(e) { console.warn('Settings load error:', e); }
-}
-
-async function saveSettings(s) {
-  try {
-    await sbFetch('settings', {
-      method: 'POST',
-      headers: {'Prefer': 'resolution=merge-duplicates'},
-      body: JSON.stringify({key: 'app_settings', value: s})
-    });
-  } catch(e) { toast('❌ خطأ في حفظ الإعدادات'); }
-}
-
-let S = mergeSettings({});
-
-let cases=[], screen='list', step=1, selId=null, search='', F={}, settingsTab='office';
+let cases=[], screen='list', step=1, selId=null, search='', F={};
 
 function toast(msg,ms=2500){
   const t=document.getElementById('toast');
@@ -275,8 +215,8 @@ function toast(msg,ms=2500){
 function resetF(){
   F={case_number:'',client_name:'',client_id:'',client_phone:'',client_address:'',
     opponent_name:'',case_main_type:'مدنية',case_sub_type:'',case_sub_type_custom:'',
-    case_story:'',contract_intro_variable:S.contract.defaultIntro||'',claim_amount:'',fees_percentage:'',
-    fees_amount:'',vat_percentage:S.contract.defaultVat||'',payment_method:S.contract.defaultPaymentMethod||'كاش',bank_name:'',bank_iban:'',
+    case_story:'',contract_intro_variable:'',claim_amount:'',fees_percentage:'',
+    fees_amount:'',vat_percentage:'',payment_method:'كاش',bank_name:'',bank_iban:'',
     payments:[{amount:'',dueType:'date',dueDate:'',dueText:''},{amount:'',dueType:'date',dueDate:'',dueText:''}],
     status:'جديدة'};
   step=1;
@@ -359,7 +299,7 @@ function stepsHTML(){
 
 function renderForm(){
   const {base,vat,total}=calcFees();
-  const CT = S.caseTypes; const subs=CT[F.case_main_type]||[];
+  const subs=CASE_TYPES[F.case_main_type]||[];
   let body='';
 
   if(step===1){body=`
@@ -384,7 +324,7 @@ function renderForm(){
   else if(step===2){body=`
     <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;color:#1e293b">نوع القضية</h3>
     <label class="form-label">النوع الرئيسي</label>
-    <select class="form-input" id="f_mtype">${Object.keys(CT).map(t=>`<option ${F.case_main_type===t?'selected':''}>${t}</option>`).join('')}</select>
+    <select class="form-input" id="f_mtype">${Object.keys(CASE_TYPES).map(t=>`<option ${F.case_main_type===t?'selected':''}>${t}</option>`).join('')}</select>
     <label class="form-label">النوع الفرعي</label>
     <select class="form-input" id="f_stype"><option value="">اختر النوع الفرعي</option>${subs.map(t=>`<option ${F.case_sub_type===t?'selected':''}>${t}</option>`).join('')}</select>
     ${F.case_sub_type==='أخرى'?`<label class="form-label">حدد النوع الفرعي</label><input class="form-input" id="f_scustom" value="${esc(F.case_sub_type_custom)}" placeholder="اكتب نوع القضية...">`:``}
@@ -499,11 +439,11 @@ function buildContractHTML(data){
       <img src="${LOGO_BASE64}" style="height:64px;width:auto;object-fit:contain" alt="">
     </div>
     <div class="contract-title">عـقـد أتعـاب مـحـــــاماة${data.case_number?`<div style="font-size:11px;font-weight:400;color:#64748b;margin-top:3px">رقم القضية: ${esc(data.case_number)}</div>`:''}</div>
-    <p>تم بحمد الله وتوفيقه في ${toHijri(contractDate)} الموافق ${toGreg(contractDate)} الاتفاق والتراضي بمدينة ${S.office.city} بين كل من: -</p>
-    <p style="margin-top:7px"><strong>الطرف الأول:</strong> السادة/ ${S.office.name} - ترخيص محاماة رقم (${S.office.license})، وعنوانه: ${S.office.address}، جوال رقم (${S.office.phone})، بريد إلكتروني (${S.office.email})، ويمثله المحامي/ ${S.office.lawyerName} - سعودي الجنسية - رقم السجل المدني (${S.office.lawyerId})، ويشار إليه بـ <strong>(الطرف الأول)</strong>.</p>
+    <p>تم بحمد الله وتوفيقه في ${toHijri(contractDate)} الموافق ${toGreg(contractDate)} الاتفاق والتراضي بمدينة جدة بين كل من: -</p>
+    <p style="margin-top:7px"><strong>الطرف الأول:</strong> السادة/ مكتب المحامي عبد المحسن بن سعد الحارثي - ترخيص محاماة رقم (13/29)، وعنوانه: جدة - حي الشاطئ - شارع طاهر زمخشري، جوال رقم (0566669936)، بريد إلكتروني (amr-law@hotmail.com)، ويمثله المحامي/ عبد المحسن بن سعد الحارثي - سعودي الجنسية - رقم السجل المدني (1010119152)، ويشار إليه بـ <strong>(الطرف الأول)</strong>.</p>
     <p style="margin-top:6px"><strong>الطرف الثاني:</strong> السيد/ <strong>${esc(data.client_name||'—')}</strong> – رقم الهوية/الجواز: <strong>${esc(data.client_id||'')}</strong>، الجوال: <strong>${esc(data.client_phone||'')}</strong>${data.client_address?`، العنوان: ${esc(data.client_address)}`:''}، ويشار إليه بـ <strong>(الطرف الثاني)</strong>.</p>
     <div class="contract-section">أولاً: التمهيد: -</div>
-    <p>حيث إن الطرف الأول متخصص في المحاماة والاستشارات القانونية ومرخص له من الجهات المختصة وفقاً للأنظمة المعمول بها في المملكة العربية السعودية (ترخيص وزارة العدل برقم ${S.office.license} وتاريخ: ${S.office.licenseDate})، ونظراً لرغبة الطرف الثاني في تكليف الطرف الأول للقيام وكالةً عنه ${esc(data.contract_intro_variable||'بقيد الدعاوى القضائية واتخاذ الإجراءات النظامية والمرافعة والتمثيل وتقديم المستندات واللوائح والمذكرات اللازمة للسير في القضية وذلك حتى صدور حكم قضائي مكتسب القطعية؛ فقد اتفق الطرفان وهما بكامل الأهلية المعتبرة شرعاً ونظاماً على الآتي: -')}</p>
+    <p>حيث إن الطرف الأول متخصص في المحاماة والاستشارات القانونية ومرخص له من الجهات المختصة وفقاً للأنظمة المعمول بها في المملكة العربية السعودية (ترخيص وزارة العدل برقم ١٣/٢٩ وتاريخ: ٢١/٠٤/١٤٢٩هـ)، ونظراً لرغبة الطرف الثاني في تكليف الطرف الأول للقيام وكالةً عنه ${esc(data.contract_intro_variable||'بقيد الدعاوى القضائية واتخاذ الإجراءات النظامية والمرافعة والتمثيل وتقديم المستندات واللوائح والمذكرات اللازمة للسير في القضية وذلك حتى صدور حكم قضائي مكتسب القطعية؛ فقد اتفق الطرفان وهما بكامل الأهلية المعتبرة شرعاً ونظاماً على الآتي: -')}</p>
     <div class="contract-section">ثانياً: موضوع العقد: -</div>
     <ol style="padding-right:20px;line-height:2">
       <li><strong>تصنيف القضية:</strong> ${esc(data.case_main_type||'')}${subType?' - '+esc(subType):''}</li>
@@ -545,7 +485,7 @@ function buildContractHTML(data){
       <li>اتفق الطرفان على أن الدفعات المقدمة مبالغ مستحقة لصالح الطرف الأول نظير البدء في الأعمال ولا يجوز المطالبة باستردادها.</li>
       <li>اتفق الطرفان على أن الطرف الأول يستحق كامل الأتعاب حال فسخ الطرف الثاني الوكالة الشرعية أو حال طلب إيقاف الطرف الأول عن الاستمرار في إنجاز الأعمال.</li>
       <li>تكون المراسلات بين الطرفين على العناوين الموضحة في بداية هذا العقد أو عن طريق البريد الإلكتروني.</li>
-      <li>أي خلاف ينشأ عن تنفيذ أو تفسير هذا العقد إذا لم يتم تسويته بالطرق الودية خلال (30) يوماً، يتم اللجوء إلى المحاكم المختصة في مدينة ${S.office.city}.</li>
+      <li>أي خلاف ينشأ عن تنفيذ أو تفسير هذا العقد إذا لم يتم تسويته بالطرق الودية خلال (30) يوماً، يتم اللجوء إلى المحاكم المختصة في مدينة جدة.</li>
       <li>يقر الطرفان بتوقيعهما على هذا العقد وهما طائعين مختارين عالمين بمضمونه ومحتوياته.</li>
       <li>حُرِّر هذا العقد من نسختين، بيد كل طرف منهما نسخة للعمل بموجبه.</li>
     </ol>
@@ -601,19 +541,17 @@ function renderEdit(data){
 function attachFormEvents(){
   const b1=document.getElementById('btn_next1');
   if(b1) b1.addEventListener('click',()=>{
-    // Validate required fields
-    const activeFields = S.clientFields.filter(f=>f.active);
-    let valid = true;
-    let missingLabels = [];
-    activeFields.forEach(f => {
-      const el = document.getElementById('sf_'+f.id);
-      if(el) F[f.id] = el.value;
-      if(f.required && (!el || !el.value.trim())) {
-        valid = false; missingLabels.push(f.label);
-      }
-    });
-    if(!valid){ toast('⚠️ يرجى ملء الحقول الإلزامية: '+missingLabels.join('، ')); return; }
-    step=2; renderForm();
+    const name=document.getElementById('f_name');
+    const id=document.getElementById('f_id');
+    const phone=document.getElementById('f_phone');
+    if(!name||!name.value.trim()||!id.value.trim()||!phone.value.trim()){
+      toast('⚠️ يرجى ملء الحقول الإلزامية: الاسم، رقم الهوية، رقم الجوال');return;
+    }
+    F.case_number=document.getElementById('f_cn').value;
+    F.client_name=name.value;F.client_id=id.value;F.client_phone=phone.value;
+    F.client_address=document.getElementById('f_addr').value;
+    F.opponent_name=document.getElementById('f_opp').value;
+    step=2;renderForm();
   });
   const mt=document.getElementById('f_mtype');
   if(mt) mt.addEventListener('change',e=>{F.case_main_type=e.target.value;F.case_sub_type='';renderForm();});
@@ -765,11 +703,11 @@ function printContract(id){
       <img src="${LOGO_BASE64}" style="height:56px;width:auto" alt="">
     </div>
     <h1>عـقـد أتعـاب مـحـــــاماة${data.case_number?`<div style="font-size:11px;font-weight:normal;color:#555;margin-top:3px">رقم القضية: ${data.case_number}</div>`:''}</h1>
-    <p>تم بحمد الله وتوفيقه في ${toHijri(contractDate)} الموافق ${toGreg(contractDate)} الاتفاق والتراضي بمدينة ${S.office.city} بين كل من: -</p>
-    <p style="margin-top:6px"><strong>الطرف الأول:</strong> السادة/ ${S.office.name} - ترخيص محاماة رقم (${S.office.license})، وعنوانه: ${S.office.address}، جوال رقم (${S.office.phone})، بريد إلكتروني (${S.office.email})، ويمثله المحامي/ ${S.office.lawyerName} - سعودي الجنسية - رقم السجل المدني (${S.office.lawyerId})، ويشار إليه في هذا العقد بـ <strong>(الطرف الأول)</strong>.</p>
+    <p>تم بحمد الله وتوفيقه في ${toHijri(contractDate)} الموافق ${toGreg(contractDate)} الاتفاق والتراضي بمدينة جدة بين كل من: -</p>
+    <p style="margin-top:6px"><strong>الطرف الأول:</strong> السادة/ مكتب المحامي عبد المحسن بن سعد الحارثي - ترخيص محاماة رقم (13/29)، وعنوانه: جدة - حي الشاطئ - شارع طاهر زمخشري، جوال رقم (0566669936)، بريد إلكتروني (amr-law@hotmail.com)، ويمثله المحامي/ عبد المحسن بن سعد الحارثي - سعودي الجنسية - رقم السجل المدني (1010119152)، ويشار إليه في هذا العقد بـ <strong>(الطرف الأول)</strong>.</p>
     <p style="margin-top:5px"><strong>الطرف الثاني:</strong> السيد/ <strong>${data.client_name||''}</strong> – رقم الهوية/الجواز: <strong>${data.client_id||''}</strong>، الجوال: <strong>${data.client_phone||''}</strong>${data.client_address?`، العنوان: ${data.client_address}`:''}، ويشار إليه في هذا العقد بـ <strong>(الطرف الثاني)</strong>.</p>
     <div class="st">أولاً: التمهيد: -</div>
-    <p>حيث إن الطرف الأول متخصص في المحاماة والاستشارات القانونية ومرخص له من الجهات المختصة وفقاً للأنظمة المعمول بها في المملكة العربية السعودية (ترخيص وزارة العدل برقم ${S.office.license} وتاريخ: ${S.office.licenseDate})، ونظراً لرغبة الطرف الثاني في تكليف الطرف الأول للقيام وكالةً عنه ${data.contract_intro_variable||'بقيد الدعاوى القضائية واتخاذ الإجراءات النظامية والمرافعة والتمثيل وتقديم المستندات واللوائح والمذكرات اللازمة للسير في القضية وذلك حتى صدور حكم قضائي مكتسب القطعية؛ فقد اتفق الطرفان وهما بكامل الأهلية المعتبرة شرعاً ونظاماً على الآتي: -'}</p>
+    <p>حيث إن الطرف الأول متخصص في المحاماة والاستشارات القانونية ومرخص له من الجهات المختصة وفقاً للأنظمة المعمول بها في المملكة العربية السعودية (ترخيص وزارة العدل برقم ١٣/٢٩ وتاريخ: ٢١/٠٤/١٤٢٩هـ)، ونظراً لرغبة الطرف الثاني في تكليف الطرف الأول للقيام وكالةً عنه ${data.contract_intro_variable||'بقيد الدعاوى القضائية واتخاذ الإجراءات النظامية والمرافعة والتمثيل وتقديم المستندات واللوائح والمذكرات اللازمة للسير في القضية وذلك حتى صدور حكم قضائي مكتسب القطعية؛ فقد اتفق الطرفان وهما بكامل الأهلية المعتبرة شرعاً ونظاماً على الآتي: -'}</p>
     <div class="st">ثانياً: موضوع العقد: -</div>
     <ol><li><strong>تصنيف القضية:</strong> ${data.case_main_type||''}${subType?' - '+subType:''}</li>
     ${data.case_story?`<li><strong>موضوع القضية:</strong> ${data.case_story}</li>`:''}
@@ -812,7 +750,7 @@ function printContract(id){
       <li>اتفق الطرفان على أن الدفعات المقدمة مبالغ مستحقة لصالح الطرف الأول نظير البدء في الأعمال ولا يجوز المطالبة باستردادها.</li>
       <li>اتفق الطرفان على أن الطرف الأول يستحق كامل الأتعاب حال فسخ الطرف الثاني الوكالة الشرعية أو حال طلب إيقاف الطرف الأول عن الاستمرار في إنجاز الأعمال.</li>
       <li>تكون المراسلات بين الطرفين على العناوين الموضحة في بداية هذا العقد أو عن طريق البريد الإلكتروني.</li>
-      <li>أي خلاف ينشأ عن تنفيذ أو تفسير هذا العقد إذا لم يتم تسويته بالطرق الودية خلال (30) يوماً، يتم اللجوء إلى المحاكم المختصة في مدينة ${S.office.city}.</li>
+      <li>أي خلاف ينشأ عن تنفيذ أو تفسير هذا العقد إذا لم يتم تسويته بالطرق الودية خلال (30) يوماً، يتم اللجوء إلى المحاكم المختصة في مدينة جدة.</li>
       <li>يقر الطرفان بتوقيعهما على هذا العقد وهما طائعين مختارين عالمين بمضمونه ومحتوياته.</li>
       <li>حُرِّر هذا العقد من نسختين، بيد كل طرف منهما نسخة للعمل بموجبه.</li>
     </ol>
@@ -1001,10 +939,6 @@ function renderSideMenu() {
             ➕ <span>قضية جديدة</span>
           </button>
           ${isAdmin() ? `
-          <button onclick="closeSideMenu();openSettings()" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 20px;border:none;background:none;cursor:pointer;font-size:13px;color:#334155;font-family:inherit">
-            ⚙️ <span>الإعدادات</span>
-          </button>` : ''}
-          ${isAdmin() ? `
           <button onclick="closeSideMenu();openUserMgmt()" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 20px;border:none;background:none;cursor:pointer;font-size:13px;color:#334155;font-family:inherit">
             👥 <span>إدارة المستخدمين</span>
           </button>` : ''}
@@ -1018,6 +952,7 @@ function renderSideMenu() {
 }
 
 function isAdmin() {
+  if (!currentUser) return false;
   return currentUser?.app_metadata?.role === 'admin' ||
          currentUser?.user_metadata?.role === 'admin';
 }
@@ -1030,7 +965,6 @@ async function initApp() {
   const sideContainer = document.getElementById('side_menu_container');
   if (sideContainer) sideContainer.innerHTML = renderSideMenu();
   document.getElementById('toast').style.display='none';
-  await loadSettingsFromDB();
   await loadCases();
 }
 
@@ -1051,7 +985,6 @@ async function checkAuth() {
   const user = await getUser();
   if (!user) { showLogin(); return; }
   currentUser = user;
-  console.log('User:', JSON.stringify(user));
   initApp();
 }
 
@@ -1139,7 +1072,7 @@ async function renderUserMgmt() {
     </div>
 
     <!-- Invite New User -->
-    ${currentUser?.app_metadata?.role === 'admin' ? `
+    ${isAdmin() ? `
     <div class="scard">
       <div class="scard-title">➕ دعوة مستخدم جديد</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1228,238 +1161,6 @@ async function deleteUser(id, email) {
     renderUserMgmt();
   } catch(e) { toast('❌ ' + e.message); }
 }
-
-
-// ===== SETTINGS PAGE =====
-function openSettings() {
-  screen = 'settings';
-  settingsTab = 'office';
-  document.getElementById('tabs-section').style.display = 'none';
-  renderSettings();
-}
-
-function renderSettings() {
-  const tabs = [
-    {id:'office', label:'🏛️ بيانات المكتب'},
-    {id:'fields', label:'📋 حقول الموكل'},
-    {id:'casetypes', label:'⚖️ أنواع القضايا'},
-    {id:'contract', label:'📄 نصوص العقد'}
-  ];
-
-  const tabsHTML = tabs.map(t=>`
-    <button onclick="settingsTab='${t.id}';renderSettings()" style="padding:10px 16px;border:none;border-bottom:3px solid ${settingsTab===t.id?'#1e293b':'transparent'};background:none;cursor:pointer;font-size:13px;font-weight:500;color:${settingsTab===t.id?'#1e293b':'#64748b'};font-family:inherit;white-space:nowrap">${t.label}</button>
-  `).join('');
-
-  let bodyHTML = '';
-
-  // ---- OFFICE TAB ----
-  if(settingsTab==='office') {
-    const o = S.office;
-    bodyHTML = `
-      <div class="scard">
-        <div class="scard-title">بيانات المكتب</div>
-        <label class="form-label">اسم المكتب</label>
-        <input class="form-input" id="st_name" value="${esc(o.name)}">
-        <label class="form-label">اسم المحامي</label>
-        <input class="form-input" id="st_lawyer" value="${esc(o.lawyerName)}">
-        <div class="grid2">
-          <div><label class="form-label">رقم الترخيص</label><input class="form-input" id="st_lic" value="${esc(o.license)}"></div>
-          <div><label class="form-label">تاريخ الترخيص</label><input class="form-input" id="st_licdate" value="${esc(o.licenseDate)}"></div>
-        </div>
-        <label class="form-label">رقم الهوية للمحامي</label>
-        <input class="form-input" id="st_lid" value="${esc(o.lawyerId)}">
-        <label class="form-label">العنوان</label>
-        <input class="form-input" id="st_addr" value="${esc(o.address)}">
-        <div class="grid2">
-          <div><label class="form-label">رقم الجوال</label><input class="form-input" id="st_phone" value="${esc(o.phone)}" dir="ltr"></div>
-          <div><label class="form-label">البريد الإلكتروني</label><input class="form-input" id="st_email" value="${esc(o.email)}" dir="ltr"></div>
-        </div>
-        <label class="form-label">المدينة</label>
-        <input class="form-input" id="st_city" value="${esc(o.city)}">
-      </div>
-      <button class="btn btn-success" style="width:100%" onclick="saveOfficeSettings()">💾 حفظ بيانات المكتب</button>`;
-  }
-
-  // ---- FIELDS TAB ----
-  else if(settingsTab==='fields') {
-    const fieldsHTML = S.clientFields.map((f,i)=>`
-      <div class="case-row" style="align-items:center;gap:8px">
-        <div style="flex:1">
-          <input class="form-input" value="${esc(f.label)}" onchange="S.clientFields[${i}].label=this.value" style="margin-bottom:4px">
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input class="form-input" value="${esc(f.placeholder||'')}" placeholder="نص placeholder" onchange="S.clientFields[${i}].placeholder=this.value" style="flex:1;min-width:120px">
-            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
-              <input type="checkbox" ${f.required?'checked':''} onchange="S.clientFields[${i}].required=this.checked"> إلزامي
-            </label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
-              <input type="checkbox" ${f.active?'checked':''} onchange="S.clientFields[${i}].active=this.checked"> ظاهر
-            </label>
-          </div>
-        </div>
-        ${!['client_name','client_id','client_phone'].includes(f.id) ? `<button class="btn btn-sm btn-danger" onclick="S.clientFields.splice(${i},1);renderSettings()">🗑️</button>` : ''}
-      </div>`).join('');
-
-    bodyHTML = `
-      <div class="scard">
-        <div class="scard-title">حقول بيانات الموكل</div>
-        <div style="font-size:12px;color:#94a3b8;margin-bottom:12px">يمكنك تعديل الحقول أو إخفاؤها أو إضافة حقول جديدة</div>
-        ${fieldsHTML}
-      </div>
-      <div class="scard">
-        <div class="scard-title">➕ إضافة حقل جديد</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input class="form-input" id="new_field_label" placeholder="اسم الحقل مثال: الإيميل" style="flex:1">
-          <input class="form-input" id="new_field_ph" placeholder="placeholder" style="flex:1">
-          <button class="btn btn-primary" onclick="addNewField()">إضافة</button>
-        </div>
-      </div>
-      <button class="btn btn-success" style="width:100%" onclick="saveFieldsSettings()">💾 حفظ الحقول</button>`;
-  }
-
-  // ---- CASE TYPES TAB ----
-  else if(settingsTab==='casetypes') {
-    const typesHTML = Object.entries(S.caseTypes).map(([main, subs],i)=>`
-      <div class="scard" style="margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <input class="form-input" value="${esc(main)}" id="ct_main_${i}" style="flex:1;font-weight:600">
-          <button class="btn btn-sm btn-danger" onclick="deleteMainType('${esc(main)}')">🗑️</button>
-        </div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:6px">الأنواع الفرعية:</div>
-        <div id="subs_${i}" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
-          ${subs.map((s,j)=>`
-            <div style="display:flex;align-items:center;background:#f1f5f9;border-radius:6px;padding:3px 4px 3px 8px;gap:4px">
-              <input value="${esc(s)}" onchange="S.caseTypes['${esc(main)}'][${j}]=this.value" style="border:none;background:none;font-size:12px;width:${Math.max(60,s.length*10)}px;font-family:inherit">
-              <button onclick="S.caseTypes['${esc(main)}'].splice(${j},1);renderSettings()" style="border:none;background:none;cursor:pointer;color:#ef4444;font-size:12px">✕</button>
-            </div>`).join('')}
-        </div>
-        <div style="display:flex;gap:6px">
-          <input class="form-input" id="new_sub_${i}" placeholder="نوع فرعي جديد" style="flex:1;font-size:12px">
-          <button class="btn btn-sm btn-primary" onclick="addSubType('${esc(main)}',${i})">+ إضافة</button>
-        </div>
-        <button class="btn btn-sm" style="margin-top:8px;width:100%" onclick="renameMainType('${esc(main)}',${i})">✏️ تغيير الاسم</button>
-      </div>`).join('');
-
-    bodyHTML = `
-      ${typesHTML}
-      <div class="scard">
-        <div class="scard-title">➕ إضافة نوع رئيسي جديد</div>
-        <div style="display:flex;gap:8px">
-          <input class="form-input" id="new_main_type" placeholder="مثال: عقارية">
-          <button class="btn btn-primary" onclick="addMainType()">إضافة</button>
-        </div>
-      </div>
-      <button class="btn btn-success" style="width:100%" onclick="saveCaseTypesSettings()">💾 حفظ أنواع القضايا</button>`;
-  }
-
-  // ---- CONTRACT TAB ----
-  else if(settingsTab==='contract') {
-    const c = S.contract;
-    bodyHTML = `
-      <div class="scard">
-        <div class="scard-title">النص الافتراضي لتمهيد العقد</div>
-        <div style="background:#fefce8;border-right:3px solid #b8953f;padding:10px 14px;border-radius:8px;font-size:12px;color:#78350f;margin-bottom:8px">ونظراً لرغبة الطرف الثاني في تكليف الطرف الأول للقيام وكالةً عنه</div>
-        <textarea class="form-input" id="st_intro" rows="5">${esc(c.defaultIntro)}</textarea>
-      </div>
-      <div class="scard">
-        <div class="scard-title">إعدادات الأتعاب الافتراضية</div>
-        <div class="grid2">
-          <div><label class="form-label">نسبة VAT الافتراضية (%)</label><input class="form-input" type="number" id="st_vat" value="${esc(c.defaultVat)}" placeholder="مثال: 15"></div>
-          <div><label class="form-label">طريقة الدفع الافتراضية</label>
-            <select class="form-input" id="st_paymethod">
-              <option ${c.defaultPaymentMethod==='كاش'?'selected':''}>كاش</option>
-              <option ${c.defaultPaymentMethod==='تحويل بنكي'?'selected':''}>تحويل بنكي</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <button class="btn btn-success" style="width:100%" onclick="saveContractSettings()">💾 حفظ إعدادات العقد</button>`;
-  }
-
-  setContent(`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <h3 style="font-size:16px;font-weight:700;color:#1e293b">⚙️ الإعدادات</h3>
-      <button class="btn btn-sm" onclick="screen='list';render()">→ رجوع</button>
-    </div>
-    <div style="display:flex;border-bottom:2px solid #e2e8f0;margin-bottom:16px;overflow-x:auto;gap:0">${tabsHTML}</div>
-    ${bodyHTML}
-  `);
-}
-
-async function saveOfficeSettings() {
-  const g = id => document.getElementById(id)?.value || '';
-  S.office = {
-    name: g('st_name'), lawyerName: g('st_lawyer'),
-    license: g('st_lic'), licenseDate: g('st_licdate'),
-    lawyerId: g('st_lid'), address: g('st_addr'),
-    phone: g('st_phone'), email: g('st_email'), city: g('st_city')
-  };
-  await saveSettings(S);
-  toast('✅ تم حفظ بيانات المكتب');
-}
-
-async function saveFieldsSettings() {
-  await saveSettings(S);
-  toast('✅ تم حفظ الحقول');
-}
-
-function addNewField() {
-  const label = document.getElementById('new_field_label').value.trim();
-  if(!label) { toast('⚠️ أدخل اسم الحقل'); return; }
-  const id = 'custom_' + Date.now();
-  const ph = document.getElementById('new_field_ph').value.trim();
-  S.clientFields.push({id, label, required:false, type:'text', placeholder:ph, active:true, custom:true});
-  renderSettings();
-}
-
-async function saveCaseTypesSettings() {
-  await saveSettings(S);
-  toast('✅ تم حفظ أنواع القضايا');
-}
-
-function addMainType() {
-  const val = document.getElementById('new_main_type').value.trim();
-  if(!val) { toast('⚠️ أدخل اسم النوع'); return; }
-  if(S.caseTypes[val]) { toast('⚠️ النوع موجود مسبقاً'); return; }
-  S.caseTypes[val] = ['أخرى'];
-  renderSettings();
-}
-
-function deleteMainType(name) {
-  if(!confirm('حذف نوع القضية: '+name+'؟')) return;
-  delete S.caseTypes[name];
-  renderSettings();
-}
-
-function renameMainType(oldName, i) {
-  const newName = document.getElementById('ct_main_'+i)?.value.trim();
-  if(!newName || newName===oldName) return;
-  const subs = S.caseTypes[oldName];
-  delete S.caseTypes[oldName];
-  // Re-insert at same position
-  const entries = Object.entries(S.caseTypes);
-  entries.splice(i, 0, [newName, subs]);
-  S.caseTypes = Object.fromEntries(entries);
-  renderSettings();
-}
-
-function addSubType(mainName, i) {
-  const val = document.getElementById('new_sub_'+i)?.value.trim();
-  if(!val) { toast('⚠️ أدخل اسم النوع الفرعي'); return; }
-  if(!S.caseTypes[mainName]) S.caseTypes[mainName] = [];
-  S.caseTypes[mainName].push(val);
-  renderSettings();
-}
-
-async function saveContractSettings() {
-  S.contract = {
-    defaultIntro: document.getElementById('st_intro')?.value || '',
-    defaultVat: document.getElementById('st_vat')?.value || '',
-    defaultPaymentMethod: document.getElementById('st_paymethod')?.value || 'كاش'
-  };
-  await saveSettings(S);
-  toast('✅ تم حفظ إعدادات العقد');
-}
-
 
 // Start app
 checkAuth();
